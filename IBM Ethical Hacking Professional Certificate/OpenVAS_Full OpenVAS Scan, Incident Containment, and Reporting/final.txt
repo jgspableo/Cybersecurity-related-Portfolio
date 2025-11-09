@@ -1,0 +1,187 @@
+Final project: Incident response report template
+
+Use this template to structure your final incident response report. Complete each section with relevant findings, supporting evidence, and clear, actionable recommendations. For additional guidance, refer to Reading: What to Include in an Incident Response Report.
+
+1. Executive summary (3 points)
+Provide a plain-language summary for non-technical readers. Briefly explain what happened, how it was discovered, the scale of the impact, and the current remediation status.
+
+Your response:
+
+On Thu, Oct 30, 2025 04:59 (local time), an OpenVAS/Greenbone scan of 192.168.122.10 detected a High/Critical vulnerability: vsftpd Compromised Source Packages Backdoor (CVE-2011-2523) on FTP 21/tcp. This backdoor can grant a remote shell on port 6200 when a crafted username is supplied. The affected scope is limited to 192.168.122.10. Immediate containment blocked FTP access and disabled the vsftpd service. The host was remediated the same day by removing the backdoored package and migrating to SFTP. A post-fix scan verified the issue was cleared. No indicators of data exfiltration were observed in the review window, but monitoring has been placed to alert on residual activity.
+
+
+2. Incident timeline (3 points)
+Present a chronological sequence of key events, using real or simulated timestamps. Include detection, investigation, containment, remediation, and lessons learned. Use a table or bullet list.
+
+Your response:
+
+2025-10-30 04:59 — OpenVAS task “Full & Fast – vsftpd check” started against 192.168.122.10.
+
+2025-10-30 05:18 — Report generated; CVE-2011-2523 flagged on 21/tcp with Critical severity.
+
+2025-10-30 05:25 — Analyst validated service banner vsftpd 2.3.4 via nmap -sV -p 21 192.168.122.10.
+
+2025-10-30 05:35 — Containment: perimeter and host firewalls blocked inbound 21/tcp; change request opened to disable vsftpd.
+
+2025-10-30 07:10 — Eradication approved and executed: vsftpd removed; service disabled from startup.
+
+2025-10-30 08:00 — Recovery: SFTP (OpenSSH) enabled for file transfer; configuration hardened.
+
+2025-10-30 09:05 — Verification scan completed; no vsftpd backdoor finding present.
+
+2025-10-31 10:00 — Lessons-learned review concluded; baseline and scanning cadence updated.
+
+
+
+
+3. Systems affected (3 points)
+List each impacted asset: hostnames, IP addresses, exposed services, user accounts, and system roles (e.g., DMZ web server).
+
+Your response:
+
+Asset: Host 192.168.122.10 (label: Host-192.168.122.10)
+Role: Lab/DMZ test VM (FTP service previously exposed)
+Service: FTP 21/tcp, banner vsftpd 2.3.4 (pre-fix)
+Accounts observed: Local system accounts only; FTP anonymous [state at time of scan: disabled]
+Exposure: Internal network; potential external reach depending on firewall rules (now blocked)
+
+
+
+
+4. Root cause analysis (3 points)
+Explain the underlying vulnerability or weakness that allowed the incident. Reference CVEs, scan data, and log evidence. Indicate if the issue was technical, procedural, or both.
+
+Your response:
+
+OpenVAS result: “vsftpd Compromised Source Packages Backdoor (CVE-2011-2523)” on 21/tcp.
+
+Service fingerprint via nmap -sV confirmed vsftpd 2.3.4.
+
+
+
+5. Indicators of compromise (IoCs) (3 points)
+Provide technical artifacts linked to the attack, such as IP addresses, file hashes, registry entries, rogue processes, or suspicious commands. Use validated sources where possible.
+
+Your response:
+
+Service banner: vsftpd 2.3.4 on 21/tcp (192.168.122.10).
+
+Trigger pattern: FTP username containing : ).
+
+Network artifact: Transient listener on 6200/tcp on same host after trigger (not observed in production, simulated in lab only).
+
+OpenVAS artifact: Result ID referencing CVE-2011-2523, severity High/Critical.
+
+Potential logs: FTP auth entries with :) in username; firewall hits to 6200/tcp (none observed during review window).
+
+
+
+6. Threat intelligence integration (3 points)
+Correlate the observed activity with known threat actor tactics, techniques, and procedures (TTPs) using frameworks like MITRE ATT&CK. Reference campaigns or advisories from trusted sources if relevant.
+
+Your response:
+
+MITRE ATT&CK mappings:
+
+T1190 — Exploit Public-Facing Application (abuse of backdoored service)
+
+T1059.004 — Command & Scripting Interpreter: Unix Shell (spawned shell)
+
+T1571 — Non-Standard Port (backdoor on 6200/tcp)
+
+T1071 — Application Layer Protocol (command channel over service protocol)
+
+Advisory context: The vsftpd 2.3.4 source tarball was briefly trojanized in 2011; fixed in 2.3.5+. Risk persists on legacy images/labs.
+
+
+
+
+7. Containment actions (3 points)
+Describe specific actions taken to stop the threat: isolating hosts, killing processes, disabling services, revoking credentials, or blocking IPs. List these in the order they occurred.
+
+Your response:
+
+Blocked inbound 21/tcp to 192.168.122.10 at perimeter and host firewalls.
+
+Disabled vsftpd service; removed from system startup.
+
+Environment sweep for additional vsftpd 2.3.4 instances — none found.
+
+Deployed monitoring to alert on 6200/tcp connections and FTP USER strings containing :).
+
+
+
+
+8. Remediation steps (3 points)
+Detail what was done to clean and restore systemsÃ¢â‚¬â€patches, configuration changes, re-imaging, restarting services. Include before-and-after scan results or screenshots if available.
+
+Your response:
+
+Eradication: Removed compromised vsftpd package; verified binary and service absence.
+
+Replacement/Hardening: Adopted SFTP (OpenSSH) for file transfer; disabled FTP entirely. Enforced strong ciphers, key-based auth, and group-based access.
+
+Validation: Post-remediation OpenVAS scan on 2025-10-30 09:05 showed no CVE-2011-2523 finding; service inventory now lists no FTP on 192.168.122.10.
+
+
+
+
+9. Lessons Learned (2 points)
+Reflect on security or operational gaps exposed by the incidentÃ¢â‚¬â€such as patch management delays, missing logs, or social engineering success. Note improvements needed.
+
+Your response:
+
+Legacy/lab images can propagate known backdoors if not refreshed.
+
+Missing package provenance/signature enforcement in the build/update process.
+
+Lack of a “deny legacy services by default” baseline (FTP/Telnet/SMBv1).
+
+
+
+
+10. Recommendations (2 points)
+Provide clear, actionable, and measurable steps to reduce future risk. Include both tactical (e.g., Ã¢â‚¬Å“Apply all critical patches within 72 hoursÃ¢â‚¬Â) and strategic (e.g., Ã¢â‚¬Å“Implement quarterly credentialed scansÃ¢â‚¬Â) recommendations.
+
+Your response:
+
+Tactical (≤72 hours)
+
+Ensure FTP is disabled network-wide; block 21/tcp except by exception.
+
+Run a credentialed scan across Linux hosts to confirm no vsftpd 2.3.4 remains.
+
+Add IDS/NSM rules: flag :) in FTP AUTH and alert on 6200/tcp listeners.
+
+Strategic (30–90 days)
+
+Enforce package signing/provenance checks and approved repositories.
+
+Implement quarterly credentialed + monthly unauthenticated vulnerability scans.
+
+Maintain a secure service baseline that prohibits legacy protocols unless risk-accepted.
+
+Refresh lab images each term; tag with EOL dates and auto-block deprecated services.
+
+
+
+
+11. Appendices (2 points)
+Attach supporting evidence: OpenVAS scan reports, screenshots, CVE references, log files, command output, or annotated images that support your findings.
+
+Your response:
+
+This should include:
+
+OpenVAS full report (PDF/HTML) for task “Full & Fast – vsftpd check” run at 2025-10-30 04:59 against 192.168.122.10.
+
+Screenshot of the individual finding “vsftpd Compromised Source Packages Backdoor (CVE-2011-2523)” showing port 21/tcp, severity, and solution text.
+
+nmap -sV -p 21 192.168.122.10 output (pre-fix).
+
+(If performed in lab) Transcript showing attempted trigger and verification that 6200/tcp did not remain open post-fix.
+
+Change ticket numbers and firewall rule updates (IDs) for audit trail.
+
+
+
